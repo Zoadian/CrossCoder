@@ -1,0 +1,53 @@
+doctype html
+html(lang="en")
+	head
+		//- link(rel="stylesheet", type="text/css", href="/css/font-awesome.css")
+		link(rel="stylesheet", type="text/css", href="/css/app.css")
+		//- link(rel="stylesheet", href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css")
+		meta(charset='utf-8')
+		//- meta(http-equiv='X-UA-Compatible', content='IE=edge')
+		//- meta(name='viewport', content='width=device-width, initial-scale=1')
+		//- meta(name='description', content='ccapp')
+		meta(name='author', content='Felix Hufnagel')
+		title CrossCoder
+	body
+		script(src='/js/vue_db.js')
+		script(src='/js/ajax.js')
+		include v-monaco-editor
+		#app
+			#menu
+				.item File
+				.item Edit
+				.item Help
+			#toolbar
+				.button.tab(v-for="(tab, i) in tabs", @click="currentTabIndex = i", :class="{ active: currentTabIndex == i }") {{ tab.title }}
+					.close.fa.fa-close(@click="closeTab(i)")
+				.spacer
+				.button.fa.fa-save(@click="save")
+				.button.fa.fa-folder-o
+			#navigation
+				.button.fa.fa-lg.fa-code(@click="ui.nav = 'home'", :class="{ active: ui.nav == 'home' }")
+				//- .button.fa.fa-lg.fa-play
+				//- .button.fa.fa-lg.fa-stop
+				.spacer
+				.button.fa.fa-lg.fa-gear(@click="ui.nav = 'settings'", :class="{ active: ui.nav == 'settings' }")
+			#sidebar-header
+				.button.fa.fa-reply(@click="dirUp")
+				input(v-model="directory.basePath", style="width:100%;")
+			#sidebar
+				ul.fa-ul
+					li.path(v-for="e in directory.entries", @dblclick="open(e)", :class="{ active: indexOfTab(e) != -1 }")
+						template(v-if="e.isDirectory")
+							i.fa.fa-li.fa-caret-right
+							| {{e.name.slice(0, -1)}}
+						template(v-if="!e.isDirectory")
+							img.fa.fa-li(style="height:16px;", :src="iconForExtension(directory.basePath + e.name)")
+							| {{e.name}}
+			#content(style="position:relative;", v-if="ui.nav == 'home'")
+				monaco-editor(v-if="tabs.length > 0 && currentTabIndex < tabs.length", v-model="tabs[currentTabIndex].code", language="javascript")
+			#content(v-if="ui.nav == 'settings'")
+				h1 Settings
+			#footer
+				.item(v-if="tabs.length > 0 && currentTabIndex < tabs.length") {{tabs[currentTabIndex].path}}
+				.item &nbsp;
+		script(src='/js/app.js')

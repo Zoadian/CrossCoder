@@ -1,0 +1,15 @@
+.dub
+bin/
+docs.json
+__dummy.html
+docs/
+crosscoder.so
+crosscoder.dylib
+crosscoder.dll
+crosscoder.a
+crosscoder.lib
+crosscoder-test-*
+*.exe
+*.o
+*.obj
+*.lst

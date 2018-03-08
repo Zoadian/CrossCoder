@@ -1,0 +1,35 @@
+script(type="text/x-template", id="tpl-simple-graph")
+	svg.graph(:view-box.camel="viewbox()", transform="scale(1, -1)", preserveAspectRatio="none", @click="handleClick") // , _shape-rendering="optimizeSpeed", _shape-rendering="crispEdges"
+		polyline(vector-effect="non-scaling-stroke", :points="xyvalues", :stroke="color", :fill="color", stroke-width="0.5")
+		// cursor
+		template(v-if="showcursor")
+			line(vector-effect="non-scaling-stroke", :x1="xcursor", :y1="ymin", :x2="xcursor", :y2="ymax", stroke="rgb(0,0,0)", stroke-width="1")
+			line(vector-effect="non-scaling-stroke", :x1="xmin", :y1="ycursor", :x2="xmax", :y2="ycursor", stroke="rgb(0,0,0)", stroke-width="1")
+
+script.
+	Vue.component('simple-graph', {
+		props: ['xmin', 'xmax', 'ymin', 'ymax', 'xyvalues', 'color', 'xcursor', 'ycursor', 'showcursor'],
+		template: '#tpl-simple-graph', 
+		mounted() {
+			window.addEventListener('resize', this.handleWindowResize);
+		}, 
+		beforeDestroy: function () {
+			window.removeEventListener('resize', this.handleWindowResize)
+		},
+		methods: {       
+			handleWindowResize(event) { 
+				this.$emit('resize', this.$el);
+			},         
+			viewbox: function(graph) {
+				return this.xmin + " " + this.ymin + " " + (this.xmax - this.xmin) + " " + (this.ymax - this.ymin);
+			},
+			handleClick : function(evt) {
+				var pt = this.$el.createSVGPoint();
+				pt.x = evt.clientX;
+				pt.y = evt.clientY;
+				// The cursor point, translated into svg coordinates
+				var cursorpt =  pt.matrixTransform(this.$el.getScreenCTM().inverse());              
+				this.$emit('coordclicked', cursorpt.x, cursorpt.y);
+			}
+		}
+	})

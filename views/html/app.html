@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <link rel="stylesheet" type="text/css" href="/css/app.css">
+    <meta charset="utf-8">
+    <meta name="author" content="Felix Hufnagel">
+    <title>CrossCoder</title>
+  </head>
+  <body>
+    <script src="/js/vue_db.js"></script>
+    <script src="/js/ajax.js"></script>
+    <script src="monaco-editor/min/vs/loader.js"></script>
+    <script type="text/x-template" id="tpl-monaco-editor">
+      <div :style="style"></div>
+    </script>
+    <script>
+      Vue.component('monaco-editor', {
+      	template: '#tpl-monaco-editor',
+      
+      	props: {
+      		width: { type: [String, Number], default: '100%' },
+      		height: { type: [String, Number], default: '100%' },
+      		value: { type: String, default: '// code \n' },
+      		srcPath: { type: String },
+      		language: { type: String, default: 'javascript' },
+      		theme: { type: String, default: 'vs' }, // vs, vs-dark, hc-black
+      		options: { type: Object, default: () => {} },
+      		highlighted: { type: Array, default: () => [{
+      			number: 0,
+      			class: ''
+      		}] },
+      		changeThrottle: { type: Number, default: 0 }
+      	},
+      	mounted() {
+      		this.fetchEditor();
+      	},
+      	destroyed() {
+      		this.destroyMonaco();
+      	},
+      	computed: {
+      		style() {
+      			const { width, height } = this;
+      			const fixedWidth = width.toString().indexOf('%') !== -1 ? width : `${width}px`;
+      			const fixedHeight = height.toString().indexOf('%') !== -1 ? height : `${height}px`;
+      			return {
+      				width: fixedWidth,
+      				height: fixedHeight,
+      			};
+      		},
+      		editorOptions() {
+      			return Object.assign({}, this.defaults, this.options, {
+      				value: this.code,
+      				language: this.language,
+      				theme: this.theme
+      			});
+      		}
+      	},
+      	data() {
+      		return {
+      			defaults: {
+      				selectOnLineNumbers: true,
+      				roundedSelection: false,
+      				readOnly: false,
+      				cursorStyle: 'line',
+      				automaticLayout: false,
+      				glyphMargin: true
+      			}
+      		}
+      	},
+      	watch: {
+      		highlighted: {
+      			handler(lines) {
+      				this.highlightLines(lines);
+      			},
+      			deep: true
+      		},
+      		language () {
+      			this.editor.setModelLanguage(this.editor.getModel(), this.language)
+      		},
+      		value (newCode, oldCode) {
+      			if(newCode != this.editor.getValue()) {
+      				this.editor.setValue(newCode);
+      			}
+      		}
+      	},
+      	methods: {
+      		highlightLines(lines) {
+      			if (!this.editor) {
+      				return;
+      			}
+      			lines.forEach((line) => {
+      				const className = line.class;
+      				const highlighted = this.$el.querySelector(`.${className}`);
+      				if (highlighted) {
+      					highlighted.classList.remove(className);
+      				}
+      				const number = parseInt(line.number);
+      					if (!this.editor && number < 1 || isNaN(number)) {
+      					return;
+      				}
+      				const selectedLine = this.$el.querySelector(`.view-lines [linenumber="${number}"]`);
+      				if (selectedLine) {
+      					selectedLine.classList.add(className);
+      				}
+      			});
+      		},
+      		editorHasLoaded(editor, monaco) {
+      			this.editor = editor;
+      			this.editor.setValue(this.value);
+      			this.monaco = monaco;
+      			this.editor.onDidChangeModelContent(event =>{
+      				this.$emit('input', editor.getValue());
+      			});
+      			this.$emit('mounted', editor);
+      		},
+      		fetchEditor() {
+      			//monacoLoader.load(this.srcPath, this.createMonaco);
+      			require.config({ paths: { 'vs': 'monaco-editor/min/vs' }});
+      			require(['vs/editor/editor.main'], this.createMonaco);
+      		},
+      		createMonaco() {
+      			this.editor = window.monaco.editor.create(this.$el, this.editorOptions);
+      			this.editorHasLoaded(this.editor, window.monaco);
+      		},
+      		destroyMonaco() {
+      			if (typeof this.editor !== 'undefined') {
+      				this.editor.dispose();
+      			}
+      		}
+      	}
+      })
+    </script>
+    <div id="app">
+      <div id="menu">
+        <div class="item">File</div>
+        <div class="item">Edit</div>
+        <div class="item">Help</div>
+      </div>
+      <div id="toolbar">
+        <div class="button tab" v-for="(tab, i) in tabs" @click="currentTabIndex = i" :class="{ active: currentTabIndex == i }">{{ tab.title }}
+          <div class="close fa fa-close" @click="closeTab(i)"></div>
+        </div>
+        <div class="spacer"></div>
+        <div class="button fa fa-save" @click="save"></div>
+        <div class="button fa fa-folder-o"></div>
+      </div>
+      <div id="navigation">
+        <div class="button fa fa-lg fa-code" @click="ui.nav = 'home'" :class="{ active: ui.nav == 'home' }"></div>
+        <div class="spacer"></div>
+        <div class="button fa fa-lg fa-gear" @click="ui.nav = 'settings'" :class="{ active: ui.nav == 'settings' }"></div>
+      </div>
+      <div id="sidebar-header">
+        <div class="button fa fa-reply" @click="dirUp"></div>
+        <input v-model="directory.basePath" style="width:100%;">
+      </div>
+      <div id="sidebar">
+        <ul class="fa-ul">
+          <li class="path" v-for="e in directory.entries" @dblclick="open(e)" :class="{ active: indexOfTab(e) != -1 }">
+            <template v-if="e.isDirectory"><i class="fa fa-li fa-caret-right"></i>{{e.name.slice(0, -1)}}</template>
+            <template v-if="!e.isDirectory"><img class="fa fa-li" style="height:16px;" :src="iconForExtension(directory.basePath + e.name)">{{e.name}}</template>
+          </li>
+        </ul>
+      </div>
+      <div id="content" style="position:relative;" v-if="ui.nav == 'home'">
+        <monaco-editor v-if="tabs.length &gt; 0 &amp;&amp; currentTabIndex &lt; tabs.length" v-model="tabs[currentTabIndex].code" language="javascript"></monaco-editor>
+      </div>
+      <div id="content" v-if="ui.nav == 'settings'">
+        <h1>Settings</h1>
+      </div>
+      <div id="footer">
+        <div class="item" v-if="tabs.length &gt; 0 &amp;&amp; currentTabIndex &lt; tabs.length">{{tabs[currentTabIndex].path}}</div>
+        <div class="item">&nbsp;</div>
+      </div>
+    </div>
+    <script src="/js/app.js"></script>
+  </body>
+</html>

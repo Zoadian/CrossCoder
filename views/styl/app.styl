@@ -1,0 +1,152 @@
+@require reset
+@require space
+@require noselect
+@require font-awesome
+
+body
+	width 100vw
+	height 100vh
+	overflow hidden
+	font-family Calibri, Candara, Segoe, "Segoe UI", Optima, Arial, san serif
+
+#app
+	width 100vw
+	height 100vh
+	background #500050
+	color rgb(170, 170, 170)
+	display grid
+	grid-template-columns min-content 1fr 7fr
+	grid-template-rows min-content max-content auto min-content
+	grid-template-areas \
+		"menu       menu           menu" \
+		"navigation sidebar-header toolbar" \
+		"navigation sidebar        content" \
+		"footer     footer         footer"
+
+#menu
+	grid-area menu
+	display flex
+	flex-direction row
+	align-items flex-center
+	justify-content start
+	background #f0f0f0
+	color black
+	font-size 0.8em
+	.item
+		padding $space-inset-squish-s
+		&:first-letter
+			text-decoration underline
+	display none
+
+#toolbar
+	grid-area toolbar
+	display flex
+	flex-direction row
+	align-items flex-center
+	justify-content start
+	background #f3f3f3
+	color black
+
+#navigation
+	grid-area navigation
+	background #2c2c2c
+	display flex
+	flex-direction column
+	.button
+		padding $space-inset-default
+
+#sidebar-header
+	grid-area sidebar-header
+	display flex
+	flex-direction row
+	align-items flex-center
+	justify-content start
+	background #f3f3f3
+	color black
+	span
+		font-size 0.8em
+		vertical-align middle
+
+#sidebar
+	grid-area sidebar
+	display flex
+	flex-direction column
+	font-size 0.8em
+	overflow scroll
+	background #f6f6f6
+	color black
+	.button
+		padding $space-inset-squish-default
+		border 1px solid grey
+		&:hover
+			background orange
+
+#content
+	grid-area content
+	display flex
+	flex-direction column
+	align-items flex-center
+	background white
+	color black
+
+#footer
+	grid-area footer
+	display flex
+	flex-direction row
+	align-items flex-center
+	justify-content space-between
+	background #007acc
+	color white
+	font-size 0.8em
+	.item
+		margin 0px 8px 0px 8px
+		padding $space-inset-squish-s
+
+.spacer
+	flex 1
+
+.button
+	@extend .noselect
+	padding $space-inset-s
+	cursor pointer
+	text-align center
+	vertical-align middle
+	white-space nowrap
+	&:active, &.active
+			color white
+	&:hover
+			color white
+
+.tab
+	color grey
+	background #ececec
+	text-align center
+	vertical-align middle
+	margin-right 1px
+	font-size 0.9em
+	&:active, &.active
+		color black
+		background white
+	.close
+		@extend .noselect
+		margin-left 5px
+		height 100%
+		cursor pointer
+		text-align center
+		vertical-align middle
+		&:hover
+			color red
+
+.path
+	@extend .noselect
+	padding $space-inset-squish-s
+	white-space nowrap
+	&:hover
+		background orange
+		cursor pointer
+	&.active
+		color orange
+
+input
+	background #f3f3f3
+	border none

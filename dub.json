@@ -1,0 +1,13 @@
+{
+	"name": "crosscoder",
+	"authors": [
+		"Felix Hufnagel"
+	],
+	"dependencies": {
+		"vibe-d": "~>0.8.3"
+	},
+	"targetPath": "bin",
+	"description": "Browser based IDE",
+	"copyright": "Copyright © 2018, Felix",
+	"license": "BSL-1.0"
+}
